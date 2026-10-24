@@ -106,6 +106,9 @@ public sealed class OpzSession : IDisposable
 
     public IMidiConnection? Connection => _midi;
 
+    /// <summary>Closes the MIDI port; the next heartbeat tick reopens it from scratch.</summary>
+    public void Reconnect() => DropConnection();
+
     /// <summary>Processes a SysEx message as if the OP-Z had sent it (offline previews and tests).</summary>
     public void InjectSysex(byte[] message) => OnSysex(message);
 

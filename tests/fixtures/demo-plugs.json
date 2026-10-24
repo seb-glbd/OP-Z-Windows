@@ -1,0 +1,350 @@
+{
+  "plugs": [
+    {
+      "id": 100,
+      "name": "deep",
+      "type": "kick"
+    },
+    {
+      "id": 101,
+      "name": "boom",
+      "type": "kick"
+    },
+    {
+      "id": 102,
+      "name": "punch",
+      "type": "kick"
+    },
+    {
+      "id": 103,
+      "name": "dust",
+      "type": "kick"
+    },
+    {
+      "id": 104,
+      "name": "vinyl",
+      "type": "kick"
+    },
+    {
+      "id": 105,
+      "name": "808 round",
+      "type": "kick"
+    },
+    {
+      "id": 106,
+      "name": "club",
+      "type": "kick"
+    },
+    {
+      "id": 107,
+      "name": "thump",
+      "type": "kick"
+    },
+    {
+      "id": 108,
+      "name": "tape",
+      "type": "kick"
+    },
+    {
+      "id": 109,
+      "name": "sub",
+      "type": "kick"
+    },
+    {
+      "id": 110,
+      "name": "hard",
+      "type": "kick"
+    },
+    {
+      "id": 111,
+      "name": "soft",
+      "type": "kick"
+    },
+    {
+      "id": 112,
+      "name": "crack",
+      "type": "snare"
+    },
+    {
+      "id": 113,
+      "name": "rim",
+      "type": "snare"
+    },
+    {
+      "id": 114,
+      "name": "brush",
+      "type": "snare"
+    },
+    {
+      "id": 115,
+      "name": "clap",
+      "type": "snare"
+    },
+    {
+      "id": 116,
+      "name": "tight",
+      "type": "snare"
+    },
+    {
+      "id": 117,
+      "name": "room",
+      "type": "snare"
+    },
+    {
+      "id": 118,
+      "name": "noise",
+      "type": "snare"
+    },
+    {
+      "id": 119,
+      "name": "snap",
+      "type": "snare"
+    },
+    {
+      "id": 120,
+      "name": "piccolo",
+      "type": "snare"
+    },
+    {
+      "id": 121,
+      "name": "lofi",
+      "type": "snare"
+    },
+    {
+      "id": 122,
+      "name": "gated",
+      "type": "snare"
+    },
+    {
+      "id": 123,
+      "name": "shaker",
+      "type": "perc"
+    },
+    {
+      "id": 124,
+      "name": "conga",
+      "type": "perc"
+    },
+    {
+      "id": 125,
+      "name": "tom",
+      "type": "perc"
+    },
+    {
+      "id": 126,
+      "name": "wood",
+      "type": "perc"
+    },
+    {
+      "id": 127,
+      "name": "bell",
+      "type": "perc"
+    },
+    {
+      "id": 128,
+      "name": "hat",
+      "type": "perc"
+    },
+    {
+      "id": 129,
+      "name": "ride",
+      "type": "perc"
+    },
+    {
+      "id": 130,
+      "name": "metal",
+      "type": "perc"
+    },
+    {
+      "id": 131,
+      "name": "clave",
+      "type": "perc"
+    },
+    {
+      "id": 132,
+      "name": "tabla",
+      "type": "perc"
+    },
+    {
+      "id": 133,
+      "name": "cowbell",
+      "type": "perc"
+    },
+    {
+      "id": 134,
+      "name": "vox",
+      "type": "sample"
+    },
+    {
+      "id": 135,
+      "name": "chop",
+      "type": "sample"
+    },
+    {
+      "id": 136,
+      "name": "field",
+      "type": "sample"
+    },
+    {
+      "id": 137,
+      "name": "stab",
+      "type": "sample"
+    },
+    {
+      "id": 138,
+      "name": "riser",
+      "type": "sample"
+    },
+    {
+      "id": 139,
+      "name": "hit",
+      "type": "sample"
+    },
+    {
+      "id": 140,
+      "name": "glass",
+      "type": "sample"
+    },
+    {
+      "id": 141,
+      "name": "space",
+      "type": "sample"
+    },
+    {
+      "id": 142,
+      "name": "radio",
+      "type": "sample"
+    },
+    {
+      "id": 143,
+      "name": "string",
+      "type": "sample"
+    },
+    {
+      "id": 144,
+      "name": "break",
+      "type": "sample"
+    },
+    {
+      "id": 145,
+      "name": "delay",
+      "type": "fx"
+    },
+    {
+      "id": 146,
+      "name": "reverb",
+      "type": "fx"
+    },
+    {
+      "id": 147,
+      "name": "chorus 80",
+      "type": "fx"
+    },
+    {
+      "id": 148,
+      "name": "crush",
+      "type": "fx"
+    },
+    {
+      "id": 149,
+      "name": "dist",
+      "type": "fx"
+    },
+    {
+      "id": 150,
+      "name": "rymd",
+      "type": "fx"
+    },
+    {
+      "id": 151,
+      "name": "phaser",
+      "type": "fx"
+    },
+    {
+      "id": 152,
+      "name": "flanger",
+      "type": "fx"
+    },
+    {
+      "id": 153,
+      "name": "tape echo",
+      "type": "fx"
+    },
+    {
+      "id": 154,
+      "name": "shimmer",
+      "type": "fx"
+    },
+    {
+      "id": 155,
+      "name": "comb",
+      "type": "fx"
+    },
+    {
+      "id": 156,
+      "name": "grain",
+      "type": "fx"
+    },
+    {
+      "id": 157,
+      "name": "saw",
+      "type": "synth"
+    },
+    {
+      "id": 158,
+      "name": "digital",
+      "type": "synth"
+    },
+    {
+      "id": 159,
+      "name": "cluster",
+      "type": "synth"
+    },
+    {
+      "id": 160,
+      "name": "analog",
+      "type": "synth"
+    },
+    {
+      "id": 161,
+      "name": "bow",
+      "type": "synth"
+    },
+    {
+      "id": 162,
+      "name": "electric",
+      "type": "synth"
+    },
+    {
+      "id": 163,
+      "name": "uranus",
+      "type": "synth"
+    },
+    {
+      "id": 164,
+      "name": "organ",
+      "type": "synth"
+    },
+    {
+      "id": 165,
+      "name": "ep",
+      "type": "synth"
+    },
+    {
+      "id": 166,
+      "name": "smooth piano",
+      "type": "synth"
+    },
+    {
+      "id": 167,
+      "name": "sample",
+      "type": "synth"
+    },
+    {
+      "id": 60001,
+      "name": "my sampler",
+      "type": "synth",
+      "user": true
+    }
+  ]
+}
