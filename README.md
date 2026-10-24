@@ -50,8 +50,9 @@ implements it from public reverse-engineering notes:
 Writes verified on hardware with readback: sound parameters ($0E), track select ($03), tempo
 ($0C), step count (CC 60), pattern bank upload ($09/$0A with ACKs, exact restore), live punch-ins from the Perform screen
 (perform channel notes 101–112 for drums, 113–124 for synths, captured from the device).
-File service: pulling plugs.json and the slot map works on updated firmware; configurator COMMIT
-(upload) is not yet verified. Not yet verified on hardware: mixer mutes, MIDI-config
+File service (firmware 1.2.45+): pulling plugs.json and the slot map, and configurator commits
+(write + readback in one session; the OP-Z needs ~6 s between file sessions) are verified. Not yet
+verified on hardware: mixer mutes, MIDI-config
 commits, live camera/video in Photomatic, and some value labels (note length, swing,
 metronome sound) whose byte mapping comes from community docs.
 
