@@ -19,7 +19,10 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        _session = new OpzSession(() => WinMidiConnection.TryOpen("OP-Z"), System.Threading.SynchronizationContext.Current);
+        var args = Environment.GetCommandLineArgs();
+        bool offline = OfflinePreview.IsRequested(args);
+        _session = new OpzSession(() => offline ? null : WinMidiConnection.TryOpen("OP-Z"), System.Threading.SynchronizationContext.Current);
+        if (offline) Loaded += (_, _) => OfflinePreview.Load(_session, args);
         _app = new AppModel(_session);
 
         var status = new StatusBar(_app);

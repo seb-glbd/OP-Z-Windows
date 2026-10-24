@@ -20,6 +20,15 @@ if (raw) session.RawSysex += d => Console.WriteLine($"{Stamp()} RX {Convert.ToHe
 session.Start();
 Thread.Sleep(TimeSpan.FromSeconds(seconds));
 
+int dump = Array.IndexOf(args, "--dump");
+if (dump >= 0 && dump + 1 < args.Length)
+{
+    Directory.CreateDirectory(args[dump + 1]);
+    if (session.Bank is not null) File.WriteAllBytes(Path.Combine(args[dump + 1], "bank.bin"), session.Bank.Data);
+    if (session.Global is not null) File.WriteAllBytes(Path.Combine(args[dump + 1], "global.bin"), session.Global.Data);
+    if (session.MidiConfig is not null) File.WriteAllBytes(Path.Combine(args[dump + 1], "midiconfig.bin"), session.MidiConfig.Data);
+}
+
 Console.WriteLine();
 Console.WriteLine($"Connected: {session.IsConnected}  Device: {session.Device.Serial} fw {session.Device.Firmware}");
 Console.WriteLine($"Play: {session.Play}  Level: {session.Level}");

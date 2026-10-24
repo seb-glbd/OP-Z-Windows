@@ -106,6 +106,12 @@ public sealed class OpzSession : IDisposable
 
     public IMidiConnection? Connection => _midi;
 
+    /// <summary>Processes a SysEx message as if the OP-Z had sent it (offline previews and tests).</summary>
+    public void InjectSysex(byte[] message) => OnSysex(message);
+
+    /// <summary>Processes a short MIDI message as if the OP-Z had sent it (offline previews and tests).</summary>
+    public void InjectShort(byte status, byte d1 = 0, byte d2 = 0) => OnShort(status, d1, d2);
+
     void Tick()
     {
         try
