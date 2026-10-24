@@ -19,6 +19,14 @@ session.NoteEvent += (t, n, v) => Console.WriteLine($"{Stamp()} NOTE {Tracks.Nam
 if (raw) session.RawSysex += d => Console.WriteLine($"{Stamp()} RX {Convert.ToHexString(d)}");
 session.Start();
 Thread.Sleep(TimeSpan.FromSeconds(seconds));
+int setTempo = Array.IndexOf(args, "--set-tempo");
+if (setTempo >= 0 && session.Global is not null)
+{
+    session.EditGlobal(g => g.Tempo = int.Parse(args[setTempo + 1]));
+    Thread.Sleep(800);
+}
+if (args.Contains("--write-test") && session.IsConnected && session.Bank is not null)
+    await WriteTest.RunAsync(session);
 
 int dump = Array.IndexOf(args, "--dump");
 if (dump >= 0 && dump + 1 < args.Length)
