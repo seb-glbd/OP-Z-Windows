@@ -74,6 +74,19 @@ public class BleMidiTests
     }
 
     [Fact]
+    public void SoundEditIsSplitIntoPacketsTheOpzAccepts()
+    {
+        // A $0E sound edit is 31 bytes as one packet; the OP-Z drops the link on writes over 20.
+        var sound = OpzFrame.Build(0x0E, new byte[19]);
+        var packets = BleMidiCodec.EncodeSysex(sound, BleMidiConnection.MaxWrite, 0x0FFF);
+        Assert.True(packets.Count > 1);
+        Assert.All(packets, p => Assert.True(p.Length <= 20));
+        var c = new Collector();
+        foreach (var p in packets) c.Decoder.Feed(p);
+        Assert.Equal(sound, Assert.Single(c.Sysex));
+    }
+
+    [Fact]
     public void DecodesRunningStatusAndSeveralMessagesPerPacket()
     {
         var c = new Collector();

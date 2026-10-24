@@ -56,8 +56,12 @@ public sealed class BleMidiConnection : IMidiConnection
     /// <summary>The link was lost or a write failed; the connection must be replaced.</summary>
     public string? Fault => _fault;
 
-    /// <summary>Largest BLE-MIDI packet the link carries (negotiated ATT MTU minus 3).</summary>
-    int MaxPacket => Math.Clamp(_gatt.MaxPduSize - 3, 20, 512);
+    /// <summary>
+    /// Largest packet written to the OP-Z: the default 23-byte ATT MTU minus 3. The OP-Z sends
+    /// 184-byte packets on the larger MTU Windows negotiates, but drops the link as soon as it
+    /// receives a write longer than this (a sound edit, 31 bytes in one packet, did it every time).
+    /// </summary>
+    public const int MaxWrite = 20;
 
     static int Timestamp => (int)(Environment.TickCount64 & 0x1FFF);
 
@@ -199,7 +203,7 @@ public sealed class BleMidiConnection : IMidiConnection
     public void SendSysex(byte[] message)
     {
         ThrowIfFaulted();
-        var packets = BleMidiCodec.EncodeSysex(message, MaxPacket, Timestamp);
+        var packets = BleMidiCodec.EncodeSysex(message, MaxWrite, Timestamp);
         // One message's packets must not interleave with another's.
         lock (_sendLock)
             foreach (var packet in packets) _outgoing.TryAdd(packet);

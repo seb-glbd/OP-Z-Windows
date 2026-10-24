@@ -97,6 +97,21 @@ if (setTempo >= 0 && session.Global is not null)
     session.EditGlobal(g => g.Tempo = int.Parse(args[setTempo + 1]));
     Thread.Sleep(800);
 }
+// --drag [seconds] [edits per second]: replay a touch pad drag on the active track's filter.
+int drag = Array.IndexOf(args, "--drag");
+if (drag >= 0 && session.IsConnected)
+{
+    int dragSeconds = drag + 1 < args.Length && int.TryParse(args[drag + 1], out var ds) ? ds : 10;
+    int dragRate = drag + 2 < args.Length && int.TryParse(args[drag + 2], out var dr) ? dr : 120;
+    DragTest.Run(session, dragSeconds, dragRate, Stamp);
+}
+// --filter-to <value>: set the active track's filter (puts it back after an interrupted drag).
+int filterTo = Array.IndexOf(args, "--filter-to");
+if (filterTo >= 0 && filterTo + 1 < args.Length && session.IsConnected)
+{
+    session.SetSound(session.ActiveTrack, SoundParam.Filter, byte.Parse(args[filterTo + 1]));
+    Thread.Sleep(1500);
+}
 if (args.Contains("--file-test") && session.IsConnected)
     await FileTest.RunAsync(session);
 if (args.Contains("--write-test") && session.IsConnected && session.Bank is not null)
