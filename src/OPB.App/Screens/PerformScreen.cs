@@ -7,29 +7,28 @@ using OPB.Core.Model;
 namespace OPB.App.Screens;
 
 /// <summary>
-/// The perform track: the twelve punch-in effects laid out on one octave (F to E). Touching a key
-/// plays it live on the perform track (several fingers at once, slide to move between effects);
-/// keys also light while a perform note plays or while shift and a key are held on the OP-Z.
+/// The perform track: the twelve punch-in effects on two octaves (F to E twice), like the OP-Z
+/// keyboard: the low octave acts on the drum tracks, the high octave on the synth tracks.
+/// Touching a key plays it live (several fingers at once, slide to move between effects); keys
+/// also light while a perform note plays or while shift and a key are held on the OP-Z.
 /// </summary>
 [Screen(ScreenKeys.Perform)]
 public sealed class PerformScreen : ScreenView
 {
-    const double TitleY = 40, Row0 = 82, KeyTop = 128, KeyBottom = 700, BlackBottom = 440, WhiteW = 180, BlackW = 112;
-    const double X0 = (ScreenView.DesignWidth - 7 * WhiteW) / 2;
-    const double ScopeW = 170, ScopeH = 64, ScopeY = KeyBottom + 24;
+    const double TitleY = 40, Row0 = 82, LabelY = 116, KeyTop = 148, KeyBottom = 720, BlackBottom = 460;
+    const double WhiteW = 106, BlackW = 66;
+    const double X0 = (ScreenView.DesignWidth - 14 * WhiteW) / 2;
 
-    /// <summary>
-    /// The OP-Z keyboard's low octave starts at F3 (MIDI 53): punch-ins there affect the current track,
-    /// the octave above affects the current group (drums or synths).
-    /// </summary>
+    /// <summary>The OP-Z keyboard's low octave starts at F3 (MIDI 53); the high octave follows at F4.</summary>
     const int LowOctaveF = 53;
 
     /// <summary>Effects from F upward (index = semitones above F).</summary>
     static readonly string[] Effects =
     [
-        "DUCK", "FILTER\nSWEEP", "LOOP 1", "STEREO", "LOOP 2", "PITCH",
-        "FOLLOW\nECHO", "RAMP UP\nFILL 1", "SHORT", "RAMP DOWN\nFILL 2", "LONG", "RANDOM",
+        "DUCK", "FILTER\nSWEEP", "LOOP\n1", "STEREO", "LOOP\n2", "PITCH",
+        "FOLLOW\nECHO", "RAMP UP\nFILL 1", "SHORT", "RAMP\nDOWN\nFILL 2", "LONG", "RANDOM",
     ];
+    static readonly string[] Octaves = ["DRUMS", "SYNTHS"];
     static readonly int[] WhiteKeys = [0, 2, 4, 6, 7, 9, 11];
     static readonly (int Key, int After)[] BlackKeys = [(1, 0), (3, 1), (5, 2), (8, 4), (10, 5)];
 
@@ -37,7 +36,6 @@ public sealed class PerformScreen : ScreenView
     readonly HashSet<int> _heldNotes = new();
     /// <summary>Pointer id → the MIDI note it is currently holding.</summary>
     readonly Dictionary<int, int> _touches = new();
-    bool _group;
 
     public PerformScreen(AppModel app) : base(app.Session)
     {
@@ -52,82 +50,83 @@ public sealed class PerformScreen : ScreenView
 
     public override string Title => "PERFORM";
 
-    static int EffectIndex(int midiNote) => ((midiNote % 12) - 5 + 12) % 12;
-
-    /// <summary>Effects lit now: touched keys, held perform notes, or shift + a held key on the OP-Z.</summary>
-    HashSet<int> Active(out bool group)
+    /// <summary>Key index on the two-octave keyboard (0..23) for a MIDI note; notes above fold onto the high octave.</summary>
+    static int KeyIndex(int midiNote)
     {
-        var active = _heldNotes.Concat(_touches.Values).Select(EffectIndex).ToHashSet();
-        group = _touches.Count > 0 ? _group : false;
-        if (Session.Ui.Shift && Session.Ui.HeldKey >= 0)
-        {
-            active.Add(Session.Ui.HeldKey % 12);
-            group = Session.Ui.HeldKey >= 12;
-        }
+        int effect = ((midiNote % 12) - 5 + 12) % 12;
+        return midiNote >= LowOctaveF + 12 ? 12 + effect : effect;
+    }
+
+    /// <summary>Keys lit now: touched keys, held perform notes, or shift + a held key on the OP-Z.</summary>
+    HashSet<int> Active()
+    {
+        var active = _heldNotes.Concat(_touches.Values).Select(KeyIndex).ToHashSet();
+        if (Session.Ui.Shift && Session.Ui.HeldKey >= 0) active.Add(Session.Ui.HeldKey % 24);
         return active;
     }
 
-    static Rect WhiteRect(int i) => new(X0 + i * WhiteW, KeyTop, WhiteW, KeyBottom - KeyTop);
-    static Rect BlackRect(int after) => new(X0 + (after + 1) * WhiteW - BlackW / 2, KeyTop, BlackW, BlackBottom - KeyTop);
-    static Rect ScopeRect(bool group) => new(DesignWidth / 2 + (group ? 0 : -ScopeW), ScopeY, ScopeW, ScopeH);
+    static Rect WhiteRect(int octave, int i) => new(X0 + (octave * 7 + i) * WhiteW, KeyTop, WhiteW, KeyBottom - KeyTop);
+    static Rect BlackRect(int octave, int after) => new(X0 + (octave * 7 + after + 1) * WhiteW - BlackW / 2, KeyTop, BlackW, BlackBottom - KeyTop);
 
     protected override void Render(DrawingContext dc)
     {
         Draw.Label(dc, Title, DesignWidth / 2, TitleY, 56, Theme.Ink, Align.Center, Theme.Regular);
         Draw.HLine(dc, LeftEdge, RightEdge, Row0);
-        var active = Active(out bool group);
+        var active = Active();
 
-        for (int i = 0; i < WhiteKeys.Length; i++)
+        for (int octave = 0; octave < 2; octave++)
         {
-            int key = WhiteKeys[i];
-            bool on = active.Contains(key);
-            var r = WhiteRect(i);
-            dc.DrawRectangle(on ? Theme.Yellow : Theme.Background, new Pen(Theme.Rule, 2), r);
-            DrawEffect(dc, key, r.X + WhiteW / 2, KeyBottom - 70, on ? Theme.Ink : Theme.Mid);
+            double left = X0 + octave * 7 * WhiteW;
+            bool any = active.Any(k => k / 12 == octave);
+            Draw.Label(dc, Octaves[octave], left + 7 * WhiteW / 2, LabelY, 30, any ? Theme.Ink : Theme.Mid, Align.Center, any ? Theme.Regular : Theme.Light);
+            for (int i = 0; i < WhiteKeys.Length; i++)
+            {
+                int key = octave * 12 + WhiteKeys[i];
+                bool on = active.Contains(key);
+                var r = WhiteRect(octave, i);
+                dc.DrawRectangle(on ? Theme.Yellow : Theme.Background, new Pen(Theme.Rule, 2), r);
+                DrawEffect(dc, WhiteKeys[i], r.X + WhiteW / 2, KeyBottom - 80, on ? Theme.Ink : Theme.Mid);
+            }
         }
-        foreach (var (key, after) in BlackKeys)
-        {
-            bool on = active.Contains(key);
-            var r = BlackRect(after);
-            dc.DrawRectangle(on ? Theme.Yellow : Theme.Ink, null, r);
-            DrawEffect(dc, key, r.X + BlackW / 2, BlackBottom - 60, on ? Theme.Ink : Theme.Mid);
-        }
+        // The octave boundary, a little heavier, like the split on the device.
+        Draw.VLine(dc, X0 + 7 * WhiteW, KeyTop, KeyBottom, new Pen(Theme.Ink, 3));
+        for (int octave = 0; octave < 2; octave++)
+            foreach (var (key, after) in BlackKeys)
+            {
+                bool on = active.Contains(octave * 12 + key);
+                var r = BlackRect(octave, after);
+                dc.DrawRectangle(on ? Theme.Yellow : Theme.Ink, null, r);
+                DrawEffect(dc, key, r.X + BlackW / 2, BlackBottom - 60, on ? Theme.Ink : Theme.Mid, 19);
+            }
 
-        // Scope switch: which octave touches play (low = current track, high = its group).
-        foreach (bool g in new[] { false, true })
-        {
-            var r = ScopeRect(g);
-            bool selected = _group == g;
-            dc.DrawRectangle(selected ? Theme.Ink : null, new Pen(Theme.Ink, 2), r);
-            Draw.Label(dc, g ? "GROUP" : "TRACK", r.X + r.Width / 2, r.Y + r.Height / 2, 30, selected ? Theme.White : Theme.Ink, Align.Center, Theme.Regular);
-        }
-        Draw.Label(dc, "TOUCH A KEY OR HOLD SHIFT + KEY", 20, ScopeY + ScopeH / 2, 30, Theme.Mid);
-        Draw.Label(dc, active.Count == 0 ? "" : group ? "GROUP" : "TRACK", DesignWidth - 20, ScopeY + ScopeH / 2, 30, Theme.Ink, Align.Right, Theme.Regular);
+        Draw.Label(dc, "TOUCH A KEY OR HOLD SHIFT + KEY", DesignWidth / 2, KeyBottom + 48, 30, Theme.Mid, Align.Center);
     }
 
-    static void DrawEffect(DrawingContext dc, int key, double cx, double y, Brush brush)
+    static void DrawEffect(DrawingContext dc, int effect, double cx, double y, Brush brush, double size = 22)
     {
-        var lines = Effects[key].Split('\n');
-        double top = y - (lines.Length - 1) * 15;
+        var lines = Effects[effect].Split('\n');
+        double top = y - (lines.Length - 1) * size * 0.6;
         for (int i = 0; i < lines.Length; i++)
-            Draw.Label(dc, lines[i], cx, top + i * 30, 26, brush, Align.Center);
+            Draw.Label(dc, lines[i], cx, top + i * size * 1.2, size, brush, Align.Center);
     }
 
-    /// <summary>The effect under a point; black keys sit on top of white keys.</summary>
+    /// <summary>The key (0..23) under a point; black keys sit on top of white keys.</summary>
     static int? KeyAt(Point p)
     {
-        foreach (var (key, after) in BlackKeys)
-            if (BlackRect(after).Contains(p)) return key;
-        for (int i = 0; i < WhiteKeys.Length; i++)
-            if (WhiteRect(i).Contains(p)) return WhiteKeys[i];
+        for (int octave = 0; octave < 2; octave++)
+            foreach (var (key, after) in BlackKeys)
+                if (BlackRect(octave, after).Contains(p)) return octave * 12 + key;
+        for (int octave = 0; octave < 2; octave++)
+            for (int i = 0; i < WhiteKeys.Length; i++)
+                if (WhiteRect(octave, i).Contains(p)) return octave * 12 + WhiteKeys[i];
         return null;
     }
 
-    int NoteFor(int effect) => LowOctaveF + effect + (_group ? 12 : 0);
+    static int NoteFor(int key) => LowOctaveF + key;
 
-    void Press(int id, int effect)
+    void Press(int id, int key)
     {
-        int note = NoteFor(effect);
+        int note = NoteFor(key);
         _touches[id] = note;
         _app.SendTrackNote((int)TrackId.Perform, note, 100);
     }
@@ -141,27 +140,23 @@ public sealed class PerformScreen : ScreenView
 
     protected override void OnPointerDown(int id, Point p)
     {
-        foreach (bool g in new[] { false, true })
-            if (ScopeRect(g).Contains(p)) { ReleaseAll(); _group = g; return; }
-        if (KeyAt(p) is int effect) Press(id, effect);
+        if (KeyAt(p) is int key) Press(id, key);
     }
 
     protected override void OnPointerMove(int id, Point p, Vector delta)
     {
         if (!_touches.TryGetValue(id, out int note)) return;
-        int? effect = KeyAt(p);
-        if (effect is int e && NoteFor(e) == note) return;
+        int? key = KeyAt(p);
+        if (key is int k && NoteFor(k) == note) return;
         Release(id);
-        if (effect is int next) Press(id, next);
+        if (key is int next) Press(id, next);
         InvalidateVisual();
     }
 
     protected override void OnPointerUp(int id, Point p) => Release(id);
 
-    void ReleaseAll()
+    protected override void OnHidden()
     {
         foreach (var id in _touches.Keys.ToList()) Release(id);
     }
-
-    protected override void OnHidden() => ReleaseAll();
 }
