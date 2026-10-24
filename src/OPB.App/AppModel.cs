@@ -1,4 +1,5 @@
 using OPB.Core;
+using OPB.Core.Midi;
 using OPB.Core.Model;
 
 namespace OPB.App;
@@ -8,9 +9,42 @@ public enum AppPage { Screen, Configurator, Photomatic, Motion, MidiSetup, Devic
 /// <summary>App-level UI state shared by the screens (not stored on the OP-Z).</summary>
 public sealed class AppModel
 {
-    public AppModel(OpzSession session) => Session = session;
+    public AppModel(OpzSession session, OpzBluetooth bluetooth)
+    {
+        Session = session;
+        Bluetooth = bluetooth;
+        if (BluetoothSettings.Load() is { } saved)
+        {
+            BluetoothName = saved.Name;
+            bluetooth.Target = saved.Address;
+        }
+    }
 
     public OpzSession Session { get; }
+
+    /// <summary>The Bluetooth link, used when no OP-Z is plugged in over USB.</summary>
+    public OpzBluetooth Bluetooth { get; }
+
+    /// <summary>Name of the saved Bluetooth OP-Z (<see cref="OpzBluetooth.Target"/>).</summary>
+    public string? BluetoothName { get; private set; }
+
+    /// <summary>Connects to this OP-Z over Bluetooth from now on (when USB isn't plugged in) and remembers it.</summary>
+    public void UseBluetooth(BleDevice device)
+    {
+        BluetoothName = string.IsNullOrWhiteSpace(device.Name) ? "OP-Z" : device.Name;
+        Bluetooth.Target = device.Address;
+        BluetoothSettings.Save(device.Address, BluetoothName);
+        if (Session.Connection is BleMidiConnection link && link.Address != device.Address) Session.Reconnect();
+    }
+
+    /// <summary>Stops using Bluetooth and drops a Bluetooth link in use.</summary>
+    public void ForgetBluetooth()
+    {
+        BluetoothName = null;
+        Bluetooth.Target = null;
+        BluetoothSettings.Save(null, null);
+        if (Session.Connection is BleMidiConnection) Session.Reconnect();
+    }
 
     public AppPage Page { get; private set; } = AppPage.Screen;
     public event Action? PageChanged;

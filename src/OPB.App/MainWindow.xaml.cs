@@ -10,6 +10,7 @@ namespace OPB.App;
 public partial class MainWindow : Window
 {
     readonly OpzSession _session;
+    readonly OpzBluetooth _bluetooth = new();
     readonly AppModel _app;
     readonly MenuOverlay _menu;
     readonly Dictionary<string, ScreenView> _screens = new();
@@ -21,9 +22,11 @@ public partial class MainWindow : Window
         InitializeComponent();
         var args = Environment.GetCommandLineArgs();
         bool offline = OfflinePreview.IsRequested(args);
-        _session = new OpzSession(() => offline ? null : WinMidiConnection.TryOpen("OP-Z"), System.Threading.SynchronizationContext.Current);
+        // USB when the OP-Z is plugged in, otherwise the saved Bluetooth OP-Z.
+        _session = new OpzSession(() => offline ? null : WinMidiConnection.TryOpen("OP-Z") ?? _bluetooth.TakeConnection(),
+            System.Threading.SynchronizationContext.Current);
         if (offline) Loaded += (_, _) => OfflinePreview.Load(_session, args);
-        _app = new AppModel(_session);
+        _app = new AppModel(_session, _bluetooth);
 
         var status = new StatusBar(_app);
         status.MenuRequested += ToggleMenu;
@@ -36,7 +39,7 @@ public partial class MainWindow : Window
         _app.PageChanged += UpdateRoute;
         SizeChanged += (_, _) => StatusRow.Height = new GridLength(Math.Max(40, ActualHeight * 88 / 900));
         Loaded += (_, _) => { UpdateRoute(); _session.Start(); _ = SnapshotIfRequestedAsync(); };
-        Closed += (_, _) => _session.Dispose();
+        Closed += (_, _) => { _session.Dispose(); _bluetooth.Dispose(); };
     }
 
     /// <summary>

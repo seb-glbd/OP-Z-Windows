@@ -7,7 +7,8 @@ Unofficial; not affiliated with Teenage Engineering.
 ## Requirements
 
 - Windows 10 or 11 (x64). A touchscreen is optional; mouse and wheel work everywhere.
-- An OP-Z connected with USB-C. OP-B talks to it over USB MIDI, so no driver or Bluetooth pairing.
+- An OP-Z connected with USB-C, or over Bluetooth like the mobile apps (needs a Bluetooth LE
+  adapter, which most laptops have). Neither needs a driver.
 - Tested with OP-Z firmware 1.2.17 and 1.2.45. The configurator needs 1.2.45 or newer (see [Firmware](#firmware)).
 
 ## Download
@@ -39,6 +40,21 @@ if you unplug it.
 - After quitting, the OP-Z holds the old connection for about 5 seconds, so a quick relaunch
   connects a few seconds later.
 
+### Bluetooth
+
+1. Open **Devices** (tap the battery) and press the button on the back of the OP-Z. Its light
+   blinks blue and it shows up under **Bluetooth**.
+2. Tap it. OP-B connects, pairing with Windows first if the OP-Z asks for it, and the light turns green.
+
+OP-B remembers that OP-Z and reconnects to it by itself whenever no USB cable is plugged in.
+USB wins when both are there. If you plug in a cable while on Bluetooth, tap **Reconnect**
+to switch. **Forget Bluetooth** stops using it.
+
+If the OP-Z was paired with Windows and later with another device (such as a phone running the
+official app), it forgets the Windows pairing and refuses to connect. OP-B says so on the Devices
+page: remove the OP-Z in Windows Settings > Bluetooth & devices, press the button on its back and
+tap it again.
+
 ## Screens
 
 The main **Screen** page follows the OP-Z like the official app does:
@@ -67,7 +83,7 @@ Other pages, from the menu:
 | Photomatic | 10 rolls × 24 image/video slots, played from track 16, with the colour dials and white-key effects. Media lives in `Documents\OP-B\photomatic`. |
 | Motion | Live visuals driven by every track, from built-in visual paks (the official Unity videopaks only run in the official app). |
 | MIDI setup | Per-track enable and channel, all 256 outgoing CC assignments, the 8 global MIDI flags. |
-| Devices | Connection, serial, firmware, battery, expansion module, reconnect. |
+| Devices | MIDI ports, OP-Zs nearby over Bluetooth, connection, serial, firmware, battery, expansion module, reconnect. |
 | Video out | Tap either side of the black bar on Photomatic or Motion: the visual opens fullscreen on a second display, or over the window if there is none. |
 
 ## Firmware
@@ -89,9 +105,11 @@ Verified on an OP-Z with readback:
   perform track's channel, captured from the device.
 - File service (1.2.45+): reading the plug catalog and slot map, and configurator commits
   (upload and readback in one session).
+- Bluetooth: pairing and connecting from the Devices page, and the StateSync session over BLE MIDI.
 
 Not yet verified on hardware:
 
+- Whether the file service (configurator) works over Bluetooth at a usable speed.
 - Mixer mutes and MIDI setup saves.
 - Photomatic with a live camera or video files; video out on a second display.
 - Master routing toggles and the Lights pattern/animation triggers.
@@ -100,16 +118,20 @@ Not yet verified on hardware:
 
 ## How it works
 
-The official app talks to the OP-Z with manufacturer SysEx over USB MIDI ("StateSync"). OP-B
-implements it from public reverse-engineering notes:
+The official app talks to the OP-Z with manufacturer SysEx over MIDI ("StateSync"), over USB or
+Bluetooth LE MIDI. OP-B implements it from public reverse-engineering notes:
 
-- `src/OPB.Core`: WinMM MIDI transport, 7-bit packing, zlib, the StateSync session
-  (heartbeat, state mirroring, writes), pattern bank / global / MIDI-config models, file service.
+- `src/OPB.Core`: WinMM MIDI transport, a BLE-MIDI transport straight to the OP-Z's GATT
+  characteristic (Windows Bluetooth LE APIs, no MIDI driver), 7-bit packing, zlib, the StateSync
+  session (heartbeat, state mirroring, writes), pattern bank / global / MIDI-config models, file service.
 - `src/OPB.App`: WPF app; every screen draws into a 1600×812 design space scaled to the window.
 - `tools/OPB.Probe`: console diagnostics. `OPB.Probe 6` prints the live state for 6 seconds;
   `--short` logs incoming MIDI notes and CCs, `--dump <dir>` saves the pattern bank, global and
   MIDI config, `--write-test` runs reversible write checks with readback, and `--file-test` checks
-  file-service timing without changing anything.
+  file-service timing without changing anything. Add `--ble` to connect over Bluetooth instead
+  (to the first OP-Z found advertising, or `--ble <address>`); allow ~15 seconds, e.g. `OPB.Probe 15 --ble`.
+  `--ble-scan` lists paired LE devices and nearby advertisements; `--ble-connect <address>` makes
+  one GATT connection attempt with timings. Neither writes anything.
 - `tests/`: protocol and model tests with fixtures captured from a real OP-Z.
 
 ## Develop
@@ -122,7 +144,7 @@ dotnet test tests\OPB.Core.Tests
 Run the app without an OP-Z, from captured fixtures:
 
 ```
-src\OPB.App\bin\Debug\net8.0-windows\win-x64\OP-B.exe --offline tests\fixtures --track 4
+src\OPB.App\bin\Debug\net8.0-windows10.0.19041.0\win-x64\OP-B.exe --offline tests\fixtures --track 4
 ```
 
 Offline options: `--track N` (0–15), `--page N` (0–3), `--ui mixer|tempo|project|shift`,

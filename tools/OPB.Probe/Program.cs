@@ -1,16 +1,63 @@
-﻿using OPB.Core;
+﻿using System.Globalization;
+using OPB.Core;
 using OPB.Core.Midi;
 using OPB.Core.Model;
 
 // Read-only diagnostics: connects, mirrors state for a few seconds, prints a summary.
-// Usage: OPB.Probe [seconds] [--raw]
+// Usage: OPB.Probe [seconds] [--raw] [--ble [address]]
 int seconds = args.Length > 0 && int.TryParse(args[0], out var s) ? s : 6;
 bool raw = args.Contains("--raw");
 
 Console.WriteLine("MIDI inputs:  " + string.Join(", ", WinMidiConnection.InputNames()));
 Console.WriteLine("MIDI outputs: " + string.Join(", ", WinMidiConnection.OutputNames()));
 
-using var session = new OpzSession(() => WinMidiConnection.TryOpen("OP-Z"));
+// --ble-scan: list paired LE devices and nearby advertisements, then exit.
+if (args.Contains("--ble-scan"))
+{
+    await BleScan.RunAsync(seconds);
+    return;
+}
+
+// --ble-connect <address>: one diagnostic GATT connection attempt, then exit.
+int bleConnect = Array.IndexOf(args, "--ble-connect");
+if (bleConnect >= 0 && bleConnect + 1 < args.Length)
+{
+    await BleScan.ConnectTestAsync(ulong.Parse(args[bleConnect + 1].Replace(":", ""), NumberStyles.HexNumber, CultureInfo.InvariantCulture));
+    return;
+}
+
+// --ble: connect over Bluetooth instead of USB, to the given address or the first OP-Z advertising.
+int ble = Array.IndexOf(args, "--ble");
+using var bluetooth = ble >= 0 ? new OpzBluetooth() : null;
+if (bluetooth is not null)
+{
+    bluetooth.Log += m => Console.WriteLine($"BLE {m}");
+    if (ble + 1 < args.Length && ulong.TryParse(args[ble + 1].Replace(":", ""), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var address))
+        bluetooth.Target = address;
+    else
+    {
+        Console.WriteLine("Scanning for an OP-Z over Bluetooth: press the button on its back...");
+        bluetooth.SetScanning(true);
+        var until = DateTime.Now.AddSeconds(20);
+        while (bluetooth.Target is null && DateTime.Now < until)
+        {
+            Thread.Sleep(250);
+            if (bluetooth.Devices.FirstOrDefault(d => d.IsOpz) is { } opz)
+            {
+                Console.WriteLine($"Found {opz.Name} {opz.AddressText} ({opz.Rssi} dBm)");
+                bluetooth.Target = opz.Address;
+            }
+        }
+        bluetooth.SetScanning(false);
+        if (bluetooth.Target is null)
+        {
+            Console.WriteLine($"No OP-Z found (Bluetooth {bluetooth.State}).");
+            return;
+        }
+    }
+}
+
+using var session = new OpzSession(bluetooth is not null ? bluetooth.TakeConnection : () => WinMidiConnection.TryOpen("OP-Z"));
 var start = DateTime.Now;
 string Stamp() => $"{(DateTime.Now - start).TotalSeconds,7:F3}";
 session.Log += m => Console.WriteLine($"{Stamp()} LOG {m}");
