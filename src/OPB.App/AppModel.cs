@@ -35,6 +35,14 @@ public sealed class AppModel
         SelectionChanged?.Invoke();
     }
 
+    /// <summary>Plays (velocity &gt; 0) or releases a note on the track's configured MIDI channel.</summary>
+    public void SendTrackNote(int track, int note, int velocity)
+    {
+        int channel = Session.MidiConfig?.Channel(track) ?? track;
+        if (velocity > 0) Session.SendShort((byte)(0x90 | channel), (byte)Math.Clamp(note, 0, 127), (byte)Math.Clamp(velocity, 1, 127));
+        else Session.SendShort((byte)(0x80 | channel), (byte)Math.Clamp(note, 0, 127), 0);
+    }
+
     /// <summary>Sends a CC on the track's configured MIDI channel (used for track settings).</summary>
     public void SendTrackCc(int track, int cc, int value)
     {
