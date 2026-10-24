@@ -50,12 +50,18 @@ public sealed class OpzSession : IDisposable
     DateTime _lastBankRequest;
     Timer? _bankRefreshTimer;
     volatile bool _stateSyncPaused;
+    // Newest unsent state write per message (see SendState), and the pacing timer.
+    readonly Dictionary<int, byte[]> _pendingState = new();
+    readonly Timer _stateTimer;
+    bool _statePacing;
+    const int StateInterval = 30;
 
     public OpzSession(Func<IMidiConnection?> connector, SynchronizationContext? context = null)
     {
         _connector = connector;
         _context = context;
         _timer = new Timer(_ => Tick(), null, Timeout.Infinite, Timeout.Infinite);
+        _stateTimer = new Timer(_ => FlushState(), null, Timeout.Infinite, Timeout.Infinite);
         for (int t = 0; t < Tracks.Count; t++) CurrentSound[t] = new byte[18];
     }
 
@@ -168,6 +174,7 @@ public sealed class OpzSession : IDisposable
             try { _midi.Dispose(); } catch { /* port already gone */ }
             _midi = null;
         }
+        lock (_pendingState) _pendingState.Clear();
         Post(() => SetConnected(false));
     }
 
@@ -187,6 +194,7 @@ public sealed class OpzSession : IDisposable
     public void Dispose()
     {
         _timer.Dispose();
+        _stateTimer.Dispose();
         _bankRefreshTimer?.Dispose();
         DropConnection();
     }
@@ -426,6 +434,36 @@ public sealed class OpzSession : IDisposable
 
     public void SendFrame(byte id, byte[] payload) => Send(OpzFrame.Build(id, payload));
 
+    /// <summary>
+    /// Sends a state message that replaces the previous one with the same <paramref name="key"/>.
+    /// A drag edits far faster than Bluetooth carries, and a backlog delays the heartbeat until
+    /// the link times out, so only the newest version waits while the link is busy.
+    /// </summary>
+    void SendState(int key, byte[] message)
+    {
+        lock (_pendingState)
+        {
+            _pendingState[key] = message;
+            if (!_statePacing) FlushState();
+        }
+    }
+
+    void FlushState()
+    {
+        lock (_pendingState)
+        {
+            if (_pendingState.Count == 0) { _statePacing = false; return; }
+            if (_midi is not { QueuedPackets: > 0 })
+            {
+                foreach (var message in _pendingState.Values) Send(message);
+                _pendingState.Clear();
+            }
+            _statePacing = true;
+            try { _stateTimer.Change(StateInterval, Timeout.Infinite); }
+            catch (ObjectDisposedException) { /* session closed */ }
+        }
+    }
+
     public void RequestBank()
     {
         if (!IsConnected || (DateTime.UtcNow - _lastBankRequest).TotalMilliseconds < 200) return;
@@ -452,7 +490,7 @@ public sealed class OpzSession : IDisposable
         var payload = new byte[19];
         payload[0] = (byte)track;
         CurrentSound[track].CopyTo(payload, 1);
-        Send(OpzFrame.Build(0x0E, payload));
+        SendState(0x0E00 | track, OpzFrame.Build(0x0E, payload));
         Changed?.Invoke(Changes.Sound);
     }
 
@@ -477,7 +515,7 @@ public sealed class OpzSession : IDisposable
     public void SetMixer(MixerState state)
     {
         Mixer = state;
-        Send(OpzFrame.Build(0x12, state.Encode()));
+        SendState(0x12, OpzFrame.Build(0x12, state.Encode()));
         Changed?.Invoke(Changes.Mixer);
     }
 
@@ -491,7 +529,7 @@ public sealed class OpzSession : IDisposable
     public void SetGlobal(GlobalData global)
     {
         Global = global;
-        Send(OpzFrame.Build(0x0C, Zlib.Compress(global.Data)));
+        SendState(0x0C, OpzFrame.Build(0x0C, Zlib.Compress(global.Data)));
         Changed?.Invoke(Changes.Global);
     }
 
@@ -506,7 +544,7 @@ public sealed class OpzSession : IDisposable
     public void SetMidiConfig(MidiConfig config)
     {
         MidiConfig = config;
-        Send(OpzFrame.Build(0x10, Zlib.Compress(config.Data)));
+        SendState(0x10, OpzFrame.Build(0x10, Zlib.Compress(config.Data)));
         Changed?.Invoke(Changes.MidiConfig);
     }
 

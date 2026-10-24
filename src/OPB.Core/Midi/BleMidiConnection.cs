@@ -61,6 +61,8 @@ public sealed class BleMidiConnection : IMidiConnection
 
     static int Timestamp => (int)(Environment.TickCount64 & 0x1FFF);
 
+    public int QueuedPackets => _outgoing.Count;
+
     /// <summary>
     /// Connects to a BLE-MIDI device, pairing first only if it refuses an unencrypted link,
     /// and subscribes to its MIDI characteristic.

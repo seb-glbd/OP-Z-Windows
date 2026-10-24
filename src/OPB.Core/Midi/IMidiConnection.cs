@@ -14,4 +14,7 @@ public interface IMidiConnection : IDisposable
     void SendSysex(byte[] message);
 
     void SendShort(byte status, byte data1 = 0, byte data2 = 0);
+
+    /// <summary>Packets accepted but not yet written; non-zero means the link is behind.</summary>
+    int QueuedPackets => 0;
 }
