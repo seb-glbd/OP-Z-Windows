@@ -168,6 +168,12 @@ public static class PlugCatalog
         foreach (var p in e.EnumerateObject())
             if (p.Value.ValueKind is JsonValueKind.Object or JsonValueKind.Array)
                 Walk(p.Value, $"{context} {p.Name}".Trim(), scope, plugs);
+        if (id is not null && string.IsNullOrWhiteSpace(name) && PlugNaming.Derive(e, id.Value) is { } derived)
+        {
+            name = derived.Name;
+            hints.Add(derived.Hint);
+            tracks.AddRange(derived.Tracks);
+        }
         if (id is null || string.IsNullOrWhiteSpace(name)) return;
         if (tracks.Count == 0 && trackIndex is int scoped) tracks.Add(scoped);
         tracks = tracks.Where(t => t is >= 0 and < Model.Tracks.Count).Distinct().ToList();

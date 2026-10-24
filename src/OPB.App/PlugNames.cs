@@ -1,6 +1,6 @@
 using System.IO;
-using System.Text.Json;
 using OPB.Core;
+using OPB.Core.Files;
 using OPB.Core.Model;
 
 namespace OPB.App;
@@ -24,7 +24,9 @@ public static class PlugNames
     {
         if (session.Bank is null) return "";
         uint plug = session.Bank.Plug(session.ActivePattern, track);
-        return Get(plug);
+        var name = Get(plug);
+        // Control tracks (perform, module, lights, motion) use built-in plugs without a file.
+        return name == "BUILT-IN" ? Tracks.Names[track] : name;
     }
 
     public static string Get(uint plug)
@@ -62,28 +64,6 @@ public static class PlugNames
 
     static void Parse(byte[] json)
     {
-        using var doc = JsonDocument.Parse(json);
-        Walk(doc.RootElement);
-    }
-
-    // The catalog's exact shape varies by firmware; collect every object with an id and a name.
-    static void Walk(JsonElement e)
-    {
-        if (e.ValueKind == JsonValueKind.Object)
-        {
-            uint? id = null;
-            string? name = null;
-            foreach (var p in e.EnumerateObject())
-            {
-                if ((p.NameEquals("id") || p.NameEquals("plugId")) && p.Value.ValueKind == JsonValueKind.Number && p.Value.TryGetUInt32(out var v)) id = v;
-                else if (p.NameEquals("name") && p.Value.ValueKind == JsonValueKind.String) name = p.Value.GetString();
-                else Walk(p.Value);
-            }
-            if (id is not null && !string.IsNullOrWhiteSpace(name)) Names[id.Value] = name!;
-        }
-        else if (e.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var item in e.EnumerateArray()) Walk(item);
-        }
+        foreach (var plug in PlugCatalog.Parse(json)) Names[plug.Id] = plug.Name;
     }
 }
