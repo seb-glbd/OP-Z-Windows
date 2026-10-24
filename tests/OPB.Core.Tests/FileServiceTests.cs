@@ -316,14 +316,14 @@ public class FileClientTests
     }
 
     [Fact]
-    public async Task OldFirmwareIsReportedAsUnavailable()
+    public async Task SilentDeviceIsReportedAsUnavailable()
     {
         var device = new SimulatedOpz { AnswersAdvert = false };
         var client = new OpzFileClient(device, Fast);
         var result = await client.DownloadAsync(Files.FileIds.SlotConfiguration);
         Assert.False(result.Ok);
         Assert.Equal(FileServiceError.NotAvailable, result.Error);
-        Assert.Contains("1.2.45", result.Message);
+        Assert.Contains("did not answer", result.Message);
         Assert.Equal(1, device.Begins);
         Assert.Equal(1, device.Ends);
         Assert.False(device.StateSyncPaused);

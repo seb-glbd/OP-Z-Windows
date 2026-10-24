@@ -39,6 +39,8 @@ if (setTempo >= 0 && session.Global is not null)
     session.EditGlobal(g => g.Tempo = int.Parse(args[setTempo + 1]));
     Thread.Sleep(800);
 }
+if (args.Contains("--file-test") && session.IsConnected)
+    await FileTest.RunAsync(session);
 if (args.Contains("--write-test") && session.IsConnected && session.Bank is not null)
     await WriteTest.RunAsync(session);
 

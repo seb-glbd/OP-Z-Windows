@@ -51,8 +51,12 @@ public readonly record struct FileProgress(string Phase, int Parts, int TotalPar
 public sealed class FileClientOptions
 {
     public ushort ServerId { get; init; } = 0x4F42;
-    /// <summary>No $34 within this time means the OP-Z doesn't offer the file service (firmware older than 1.2.45).</summary>
-    public TimeSpan HelloTimeout { get; init; } = TimeSpan.FromSeconds(4);
+    /// <summary>
+    /// No $34 within this time means the OP-Z doesn't offer the file service (firmware older than 1.2.45).
+    /// After a previous session the firmware takes about 6.3 s to answer again, even after $55, so this
+    /// must comfortably exceed that.
+    /// </summary>
+    public TimeSpan HelloTimeout { get; init; } = TimeSpan.FromSeconds(12);
     public TimeSpan HeartbeatInterval { get; init; } = TimeSpan.FromMilliseconds(900);
     public TimeSpan PartTimeout { get; init; } = TimeSpan.FromSeconds(2);
     public int PartRetries { get; init; } = 2;
@@ -112,6 +116,25 @@ public sealed class OpzFileClient
         return RunAsync(session => UploadFilesAsync(session, files, removePlugIds ?? [], progress, cancel), cancel);
     }
 
+    /// <summary>
+    /// Uploads files, then reads <paramref name="readBackIds"/> in the same session. Each new session
+    /// costs ~6 s of waiting for the OP-Z, so a write plus its verification share one.
+    /// </summary>
+    public async Task<(FileServiceResult<UploadReport> Upload, FileServiceResult<IReadOnlyList<byte[]>>? ReadBack)> UploadAndReadBackAsync(
+        IReadOnlyList<HostedFile> files, IReadOnlyList<uint> readBackIds, IProgress<FileProgress>? progress = null, CancellationToken cancel = default)
+    {
+        FileServiceResult<IReadOnlyList<byte[]>>? readBack = null;
+        var upload = await RunAsync(async session =>
+        {
+            var result = await UploadFilesAsync(session, files, [], progress, cancel).ConfigureAwait(false);
+            if (!result.Ok) return result;
+            session.BeatIfDue(false, force: true); // back to idle before requesting files
+            readBack = await DownloadFilesAsync(session, readBackIds, progress, cancel).ConfigureAwait(false);
+            return result;
+        }, cancel).ConfigureAwait(false);
+        return (upload, readBack);
+    }
+
     async Task<FileServiceResult<T>> RunAsync<T>(Func<Session, Task<FileServiceResult<T>>> body, CancellationToken cancel)
     {
         if (!_transport.IsReady) return FileServiceResult<T>.Fail(FileServiceError.NotConnected, "OP-Z is not connected");
@@ -125,7 +148,7 @@ public sealed class OpzFileClient
             var hello = await session.OpenAsync(cancel).ConfigureAwait(false);
             if (hello is null)
                 return FileServiceResult<T>.Fail(FileServiceError.NotAvailable,
-                    "File service not available: the OP-Z did not answer (it needs firmware 1.2.45 or newer)");
+                    $"The OP-Z did not answer the file request within {_options.HelloTimeout.TotalSeconds:0} seconds");
             LastStateCrc = hello.Value.StateCrc;
             return await body(session).ConfigureAwait(false);
         }

@@ -154,14 +154,18 @@ public sealed class ConfiguratorScreen : ScreenView
             SetPhase(Phase.Ready);
             return;
         }
-        var progress = new Progress<FileProgress>(p => { _status = $"WRITING SLOT CONFIGURATION {p.Parts}/{p.TotalParts}"; InvalidateVisual(); });
-        var upload = await _client.UploadAsync([new HostedFile(FileIds.SlotConfigurationPath, edited)], progress: progress);
-        string failure;
-        if (upload.Ok)
+        // The OP-Z takes ~6 s to accept a new file session after the last one; say so while we wait.
+        _status = "WAITING FOR THE OP-Z FILE SERVICE";
+        InvalidateVisual();
+        var progress = new Progress<FileProgress>(p =>
         {
-            _status = "CHECKING THE OP-Z'S COPY";
+            _status = p.TotalParts > 0 ? $"WRITING SLOT CONFIGURATION {p.Parts}/{p.TotalParts}" : "CHECKING THE OP-Z'S COPY";
             InvalidateVisual();
-            var back = await _client.DownloadAsync(FileIds.SlotConfiguration);
+        });
+        var (upload, back) = await _client.UploadAndReadBackAsync([new HostedFile(FileIds.SlotConfigurationPath, edited)], [FileIds.SlotConfiguration], progress);
+        string failure;
+        if (upload.Ok && back is not null)
+        {
             SlotConfiguration? readback = null;
             if (back.Ok) try { readback = SlotConfiguration.Parse(back.Value![0]); } catch { /* treated as a mismatch */ }
             if (readback is not null && readback.SameAssignments(expected))
@@ -174,7 +178,7 @@ public sealed class ConfiguratorScreen : ScreenView
                 return;
             }
             failure = back.Ok ? "THE OP-Z KEPT A DIFFERENT SLOT MAP" : back.Message.ToUpperInvariant();
-            _status = "RESTORING THE ORIGINAL SLOT MAP";
+            _status = "RESTORING THE ORIGINAL SLOT MAP (WAITING FOR THE OP-Z)";
             InvalidateVisual();
             var restore = await _client.UploadAsync([new HostedFile(FileIds.SlotConfigurationPath, _originalBytes)]);
             _status = restore.Ok ? $"COMMIT FAILED ({failure}); ORIGINAL RESTORED" : $"COMMIT FAILED ({failure}); RESTORE FAILED: {restore.Message.ToUpperInvariant()}";
@@ -301,6 +305,11 @@ public sealed class ConfiguratorScreen : ScreenView
                 DrawMessage(dc, "FIRMWARE UPDATE NEEDED",
                     $"THE CONFIGURATOR READS AND WRITES THE OP-Z'S PLUG SLOTS OVER ITS FILE SERVICE, WHICH NEEDS FIRMWARE {Firmware.FileService} OR NEWER. THIS OP-Z RUNS {firmware.ToUpperInvariant()}.",
                     "TRY ANYWAY", Theme.Yellow, footer: "UPDATE AT " + Firmware.DownloadUrl.ToUpperInvariant());
+                break;
+            case Phase.Unavailable when Firmware.SupportsFileService(Session.Device.Firmware) == true:
+                DrawMessage(dc, "THE OP-Z DID NOT ANSWER",
+                    "THE OP-Z'S FILE SERVICE DIDN'T RESPOND IN TIME. AFTER ANOTHER TRANSFER IT CAN TAKE A FEW SECONDS BEFORE IT ANSWERS AGAIN.",
+                    "TRY AGAIN", Theme.Yellow);
                 break;
             case Phase.Unavailable:
                 DrawMessage(dc, "FILE SERVICE NOT AVAILABLE",
