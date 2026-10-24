@@ -7,7 +7,7 @@ namespace OPB.App;
 
 /// <summary>
 /// Feeds captured OP-Z state into a session without hardware, for screenshots and development:
-/// <c>OPB.App --offline tests\fixtures [--ui mixer|tempo|project|shift] [--track N] [--page N] [--playing]</c>.
+/// <c>OPB.App --offline tests\fixtures [--ui mixer|tempo|project|shift] [--step N] [--track N] [--page N] [--playing]</c>.
 /// </summary>
 public static class OfflinePreview
 {
@@ -49,7 +49,7 @@ public static class OfflinePreview
             case "mixer": ui[1] |= 0x80; break;
             case "tempo": ui[1] |= 0x40; break;
             case "project": ui[3] |= 0x02; break;
-            case "shift": ui[1] = 0x20 | 0x02; break; // shift + step 3 held
+            case "shift": ui[1] = (byte)(0x20 | (int.TryParse(Arg(args, "--step"), out var st) ? Math.Clamp(st - 1, 0, 15) : 2)); break; // shift + step (default 3) held
         }
         session.InjectSysex(OpzFrame.Build(0x06, ui));
         if (args.Contains("--playing"))
