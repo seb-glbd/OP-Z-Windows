@@ -189,7 +189,7 @@ public sealed class TrackScreen : ScreenView
             var lw = Draw.Text(letters[i], 30, Theme.Mid).Width;
             var vw = Draw.Text(value, 30, Theme.Ink, Theme.Regular).Width;
             double left = cx - (lw + 10 + vw) / 2;
-            Draw.Label(dc, letters[i], left, EnvLabels + 22, 30, Theme.Mid);
+            Draw.Label(dc, letters[i], left, EnvLabels + 22, 30, DialBrush(1, i));
             Draw.Label(dc, value, left + lw + 10, EnvLabels + 22, 30, Theme.Ink, Align.Left, Theme.Regular);
             _hits.Add((new Rect(ColLabel + i * ColW, EnvLabels, ColW, Row3 - EnvLabels), param));
         }
@@ -235,7 +235,8 @@ public sealed class TrackScreen : ScreenView
         }
         geo.Freeze();
         dc.DrawGeometry(null, linePen, geo);
-        foreach (var h in handles) Draw.Handle(dc, h, handle);
+        // One handle per envelope parameter, colored like the encoder that turns it.
+        for (int i = 0; i < handles.Length; i++) Draw.Handle(dc, handles[i], DialBrush(1, i));
         if (drum) Draw.Handle(dc, new Point(x0, bottom), handle);
     }
 
