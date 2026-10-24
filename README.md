@@ -17,7 +17,7 @@ Get `OP-B.exe` from the [latest release](https://github.com/seb-glbd/OP-Z-Window
 It's a single self-contained file: no installer and no .NET install needed. Plug in the OP-Z, or
 connect it over [Bluetooth](#bluetooth), and run it.
 
-- **Versions:** 0.2.0 adds Bluetooth. 0.1.0 is USB only.
+- **Versions:** 0.2.1 shows kick sound changes live. 0.2.0 adds Bluetooth. 0.1.0 is USB only.
 
 - **Windows SmartScreen:** the exe isn't code-signed, so on first launch Windows may show
   "Windows protected your PC". Click **More info → Run anyway**.
