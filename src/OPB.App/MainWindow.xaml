@@ -11,5 +11,6 @@
         <ContentControl x:Name="ScreenHost" Grid.Row="0" Focusable="False" />
         <ContentControl x:Name="OverlayHost" Grid.Row="0" Focusable="False" />
         <ContentControl x:Name="StatusHost" Grid.Row="1" Focusable="False" />
+        <ContentControl x:Name="StageHost" Grid.RowSpan="2" Focusable="False" />
     </Grid>
 </Window>

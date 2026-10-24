@@ -57,6 +57,18 @@ public static class OfflinePreview
             session.InjectShort(0xFA);
             for (int i = 0; i < 6 * 5; i++) session.InjectShort(0xF8);
         }
+
+        // Visual pages: --notes 53,79 sends note-ons on MIDI channel 16 (track 16); --sound 15:0=200,9=40 sets track:param=value.
+        if (Arg(args, "--notes") is { } notes)
+            foreach (var n in notes.Split(','))
+                if (byte.TryParse(n, out var note)) session.InjectShort(0x9F, note, 100);
+        if (Arg(args, "--sound") is { } sound && sound.Split(':') is [var st, var pairs] && int.TryParse(st, out var soundTrack))
+            System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, () =>
+            {
+                foreach (var pair in pairs.Split(','))
+                    if (pair.Split('=') is [var p, var v] && int.TryParse(p, out var param) && byte.TryParse(v, out var value))
+                        session.SetSound(Math.Clamp(soundTrack, 0, 15), (SoundParam)Math.Clamp(param, 0, 17), value);
+            });
     }
 
     /// <summary>Offline demo files for screens that need the file service: <c>--offline dir --demo-files</c> reads them from dir.</summary>

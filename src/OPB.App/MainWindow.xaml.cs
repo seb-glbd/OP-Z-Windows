@@ -111,6 +111,17 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    bool _stageFullScreen;
+
+    /// <summary>Shows a visual over the whole window in full screen (video out without a second display); null restores.</summary>
+    public void ShowStage(UIElement? stage)
+    {
+        StageHost.Content = stage;
+        bool full = WindowStyle == WindowStyle.None;
+        if (stage is not null && !full) { _stageFullScreen = true; ToggleFullScreen(); }
+        else if (stage is null && _stageFullScreen) { _stageFullScreen = false; if (full) ToggleFullScreen(); }
+    }
+
     void ToggleFullScreen()
     {
         if (WindowStyle == WindowStyle.None)
