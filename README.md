@@ -14,7 +14,10 @@ Unofficial; not affiliated with Teenage Engineering.
 ## Download
 
 Get `OP-B.exe` from the [latest release](https://github.com/seb-glbd/OP-Z-Windows/releases/latest).
-It's a single self-contained file: no installer and no .NET install needed. Plug in the OP-Z and run it.
+It's a single self-contained file: no installer and no .NET install needed. Plug in the OP-Z, or
+connect it over [Bluetooth](#bluetooth), and run it.
+
+- **Versions:** 0.2.0 adds Bluetooth. 0.1.0 is USB only.
 
 - **Windows SmartScreen:** the exe isn't code-signed, so on first launch Windows may show
   "Windows protected your PC". Click **More info → Run anyway**.
