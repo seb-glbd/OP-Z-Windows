@@ -17,7 +17,8 @@ Get `OP-B.exe` from the [latest release](https://github.com/seb-glbd/OP-Z-Window
 It's a single self-contained file: no installer and no .NET install needed. Plug in the OP-Z, or
 connect it over [Bluetooth](#bluetooth), and run it.
 
-- **Versions:** 0.2.1 shows kick sound changes live. 0.2.0 adds Bluetooth. 0.1.0 is USB only.
+- **Versions:** 0.2.2 keeps Bluetooth connected while you edit sounds. 0.2.1 shows kick sound
+  changes live. 0.2.0 adds Bluetooth. 0.1.0 is USB only.
 
 - **Windows SmartScreen:** the exe isn't code-signed, so on first launch Windows may show
   "Windows protected your PC". Click **More info → Run anyway**.
@@ -108,7 +109,8 @@ Verified on an OP-Z with readback:
   perform track's channel, captured from the device.
 - File service (1.2.45+): reading the plug catalog and slot map, and configurator commits
   (upload and readback in one session).
-- Bluetooth: pairing and connecting from the Devices page, and the StateSync session over BLE MIDI.
+- Bluetooth: pairing and connecting from the Devices page, the StateSync session over BLE MIDI,
+  and sound edits from the touch pad (the OP-Z drops the link on writes over 20 bytes).
 
 Not yet verified on hardware:
 
@@ -134,7 +136,9 @@ Bluetooth LE MIDI. OP-B implements it from public reverse-engineering notes:
   file-service timing without changing anything. Add `--ble` to connect over Bluetooth instead
   (to the first OP-Z found advertising, or `--ble <address>`); allow ~15 seconds, e.g. `OPB.Probe 15 --ble`.
   `--ble-scan` lists paired LE devices and nearby advertisements; `--ble-connect <address>` makes
-  one GATT connection attempt with timings. Neither writes anything.
+  one GATT connection attempt with timings. Neither writes anything. `--drag [seconds] [rate]`
+  replays a touch pad drag on the active track's filter, then puts it back; `--filter-to <value>`
+  sets that filter.
 - `tests/`: protocol and model tests with fixtures captured from a real OP-Z.
 
 ## Develop
