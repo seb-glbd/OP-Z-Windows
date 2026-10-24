@@ -64,6 +64,7 @@ public partial class MainWindow : Window
         bitmap.Render(Root);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(path))!);
         using (var file = System.IO.File.Create(path)) encoder.Save(file);
         Close();
     }
