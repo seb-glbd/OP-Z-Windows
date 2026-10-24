@@ -10,9 +10,19 @@ Unofficial; not affiliated with Teenage Engineering.
 - An OP-Z connected with USB-C. OP-B talks to it over USB MIDI, so no driver or Bluetooth pairing.
 - Tested with OP-Z firmware 1.2.17 and 1.2.45. The configurator needs 1.2.45 or newer (see [Firmware](#firmware)).
 
+## Download
+
+Get `OP-B.exe` from the [latest release](https://github.com/seb-glbd/OP-Z-Windows/releases/latest).
+It's a single self-contained file: no installer and no .NET install needed. Plug in the OP-Z and run it.
+
+- **Windows SmartScreen:** the exe isn't code-signed, so on first launch Windows may show
+  "Windows protected your PC". Click **More info → Run anyway**.
+- **Checksum:** each release includes `OP-B.exe.sha256`. To check your download, run
+  `Get-FileHash OP-B.exe -Algorithm SHA256` in PowerShell and compare the two values.
+
 ## Build and run
 
-Install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0), then:
+To build it yourself instead, install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0), then:
 
 ```
 dotnet publish src\OPB.App -c Release -o publish
