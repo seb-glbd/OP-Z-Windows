@@ -67,4 +67,4 @@ OP-B.exe --offline tests\fixtures [--ui mixer|tempo|project|shift] [--track N]  
 Protocol knowledge from [kmorrill/op-z-sysex](https://github.com/kmorrill/op-z-sysex) (MIT),
 [MarkRdgOx/opzdoc](https://github.com/MarkRdgOx/opzdoc),
 [leddy231/libopz](https://github.com/leddy231/libopz) and
-[lrk/z-po-project](https://github.com/lrk/z-po-project). OP-Z is a trademark of Teenage Engineering.
+[lrk/z-po-project](https://github.com/lrk/z-po-project); see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). OP-Z is a trademark of Teenage Engineering.
