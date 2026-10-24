@@ -17,6 +17,20 @@ session.Log += m => Console.WriteLine($"{Stamp()} LOG {m}");
 session.Changed += c => Console.WriteLine($"{Stamp()} CHANGED {c}");
 session.NoteEvent += (t, n, v) => Console.WriteLine($"{Stamp()} NOTE {Tracks.Names[t]} {n} {v}");
 if (raw) session.RawSysex += d => Console.WriteLine($"{Stamp()} RX {Convert.ToHexString(d)}");
+// --short: log every non-realtime MIDI message (the connection opens later, so hook on the first change).
+bool shortHooked = false;
+session.Changed += _ =>
+{
+    if (shortHooked || !args.Contains("--short") || session.Connection is null) return;
+    shortHooked = true;
+    session.Connection.ShortReceived += (st, d1, d2) =>
+    {
+        if (st >= 0xF8) return; // clock and other realtime bytes
+        Console.WriteLine($"{Stamp()} MIDI {st:X2} {d1:X2} {d2:X2}  ch{(st & 0x0F) + 1} {(st & 0xF0) switch { 0x90 => "ON ", 0x80 => "OFF", 0xB0 => "CC ", _ => "   " }} {d1} ({Display.NoteName(d1)}) {d2}");
+    };
+};
+session.Changed += c => { if ((c & Changes.Ui) != 0) Console.WriteLine($"{Stamp()} UI raw {Convert.ToHexString(session.Ui.Raw)} shift={session.Ui.Shift} held={session.Ui.HeldKey}"); };
+session.Changed += c => { if ((c & Changes.Play) != 0) Console.WriteLine($"{Stamp()} PLAY track={Tracks.Names[session.Play.Track]} octave={session.Play.Octave} playing={session.Play.Playing}"); };
 session.Start();
 Thread.Sleep(TimeSpan.FromSeconds(seconds));
 int setTempo = Array.IndexOf(args, "--set-tempo");

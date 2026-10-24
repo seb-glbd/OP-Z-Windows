@@ -19,8 +19,12 @@ public sealed class PerformScreen : ScreenView
     const double WhiteW = 106, BlackW = 66;
     const double X0 = (ScreenView.DesignWidth - 14 * WhiteW) / 2;
 
-    /// <summary>The OP-Z keyboard's low octave starts at F3 (MIDI 53); the high octave follows at F4.</summary>
-    const int LowOctaveF = 53;
+    /// <summary>
+    /// Punch-in notes on the perform track's channel, captured from the OP-Z: the drum group is
+    /// F7..E8 (101..112) and the synth group F8..E9 (113..124). Shift + key on an audio track
+    /// sends 5..16 for that track alone.
+    /// </summary>
+    const int LowOctaveF = 101;
 
     /// <summary>Effects from F upward (index = semitones above F).</summary>
     static readonly string[] Effects =
@@ -50,7 +54,7 @@ public sealed class PerformScreen : ScreenView
 
     public override string Title => "PERFORM";
 
-    /// <summary>Key index on the two-octave keyboard (0..23) for a MIDI note; notes above fold onto the high octave.</summary>
+    /// <summary>Key index on the two-octave keyboard (0..23) for a MIDI note; single-track punch-ins (5..16) light the drum row.</summary>
     static int KeyIndex(int midiNote)
     {
         int effect = ((midiNote % 12) - 5 + 12) % 12;
