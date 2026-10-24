@@ -391,7 +391,8 @@ public sealed class OpzSession : IDisposable
             int type = p[i + 6];
             if (i + 7 + length > p.Length) break;
             if (type is 0x04 or 0x05) needsRefresh = true;
-            else if (offset > 0 && offset + length <= PatternBank.PatternSize)
+            // Offset 0 is valid: it's the kick's plug id, the first field of the pattern.
+            else if (offset + length <= PatternBank.PatternSize)
                 p.AsSpan(i + 7, length).CopyTo(Bank.Data.AsSpan(pattern * PatternBank.PatternSize + offset));
             i += 7 + length;
         }

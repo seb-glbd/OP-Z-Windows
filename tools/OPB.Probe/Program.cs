@@ -64,6 +64,17 @@ session.Log += m => Console.WriteLine($"{Stamp()} LOG {m}");
 session.Changed += c => Console.WriteLine($"{Stamp()} CHANGED {c}");
 session.NoteEvent += (t, n, v) => Console.WriteLine($"{Stamp()} NOTE {Tracks.Names[t]} {n} {v}");
 if (raw) session.RawSysex += d => Console.WriteLine($"{Stamp()} RX {Convert.ToHexString(d)}");
+// --deltas: decode pattern deltas ($02) and time pattern bank transfers ($09/$0A).
+if (args.Contains("--deltas"))
+{
+    session.RawSysex += d =>
+    {
+        if (!OPB.Core.Protocol.OpzFrame.TryParse(d, out var f)) return;
+        if (f.MessageId == 0x02) Console.WriteLine($"{Stamp()} DELTA {Convert.ToHexString(f.Payload)}");
+        else if (f.MessageId is 0x09 or 0x0A && f.Payload.Length >= 6)
+            Console.WriteLine($"{Stamp()} BANK ${f.MessageId:X2} packet {f.Payload[4] | (f.Payload[5] << 8)} ({f.Payload.Length} bytes)");
+    };
+}
 // --short: log every non-realtime MIDI message (the connection opens later, so hook on the first change).
 bool shortHooked = false;
 session.Changed += _ =>

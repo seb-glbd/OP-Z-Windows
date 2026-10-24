@@ -332,4 +332,18 @@ public class FixtureTests
         Assert.Equal(5, session.ActiveTrack);
         Assert.True(changes.HasFlag(Changes.MidiConfig) && changes.HasFlag(Changes.Device) && changes.HasFlag(Changes.Global));
     }
+
+    [Fact]
+    public void PatternDeltaUpdatesKickPlugAtOffsetZero()
+    {
+        var session = new OpzSession(() => null);
+        session.InjectSysex(OpzFrame.Build(0x0A, [0x40, 0, 0, 0, 0, 0, .. Zlib.Compress(Fixtures.Read("bank.bin"))]));
+        Assert.NotNull(session.Bank);
+        // Records: counter, flag, offset LE16, pattern, length, type, payload. Kick plug at 0, snare plug at 12.
+        session.InjectSysex(OpzFrame.Build(0x02, [
+            1, 0, 0, 0, 0, 4, 0x01, 0x34, 0x12, 0, 0,
+            2, 0, 12, 0, 0, 4, 0x01, 0x78, 0x56, 0, 0]));
+        Assert.Equal(0x1234u, session.Bank!.Plug(0, 0));
+        Assert.Equal(0x5678u, session.Bank.Plug(0, 1));
+    }
 }
