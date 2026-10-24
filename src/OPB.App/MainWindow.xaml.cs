@@ -99,6 +99,9 @@ public partial class MainWindow : Window
             case Key.Escape when OverlayHost.Content is not null:
                 OverlayHost.Content = null;
                 break;
+            case Key.Escape when _app.Page != AppPage.Screen:
+                _app.Navigate(AppPage.Screen);
+                break;
             case Key.Escape when WindowStyle == WindowStyle.None:
                 ToggleFullScreen();
                 break;

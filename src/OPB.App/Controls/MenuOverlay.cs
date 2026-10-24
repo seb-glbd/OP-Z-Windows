@@ -45,8 +45,9 @@ public sealed class MenuOverlay : FrameworkElement
         }
     }
 
-    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e) { _scrollStartY = e.GetPosition(this).Y; _dragged = false; }
-    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e) => Tap(e.GetPosition(this));
+    // Touch taps also arrive as promoted mouse events (StylusDevice set); handle each tap once.
+    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e) { if (e.StylusDevice is null) { _scrollStartY = e.GetPosition(this).Y; _dragged = false; } }
+    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e) { if (e.StylusDevice is null) Tap(e.GetPosition(this)); }
     protected override void OnTouchDown(TouchEventArgs e) { _scrollStartY = e.GetTouchPoint(this).Position.Y; _dragged = false; e.Handled = true; }
     protected override void OnTouchUp(TouchEventArgs e) { Tap(e.GetTouchPoint(this).Position); e.Handled = true; }
 

@@ -70,7 +70,11 @@ public sealed class StatusBar : FrameworkElement
         dc.DrawRectangle(null, new Pen(Theme.White, 3 * s), new Rect(ActualWidth - 116 * s, by - 16 * s, 56 * s, 32 * s));
     }
 
-    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e) => Tap(e.GetPosition(this));
+    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+    {
+        if (e.StylusDevice is not null) return; // promoted from touch; OnTouchUp already handled it
+        Tap(e.GetPosition(this));
+    }
 
     protected override void OnTouchUp(TouchEventArgs e)
     {
@@ -87,6 +91,6 @@ public sealed class StatusBar : FrameworkElement
             if (Session.ClockRunning || Session.Play.Playing) Session.TransportStop();
             else Session.TransportStart();
         }
-        else if (p.X < 400 * s) _app.Navigate(AppPage.Devices);
+        else if (p.X < 400 * s) _app.Navigate(_app.Page == AppPage.Devices ? AppPage.Screen : AppPage.Devices);
     }
 }

@@ -63,7 +63,7 @@ public sealed class VideoOut(FrameworkElement stage, Action attach, Action detac
             };
             hint.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0.8, 0, TimeSpan.FromSeconds(1)) { BeginTime = TimeSpan.FromSeconds(2) });
             var frame = new Grid { Background = Brushes.Black, Children = { stage, hint } };
-            frame.MouseLeftButtonUp += (_, _) => Stop();
+            frame.MouseLeftButtonUp += (_, e) => { if (e.StylusDevice is null) Stop(); };
             frame.TouchUp += (_, e) => { e.Handled = true; Stop(); };
             main.PreviewKeyDown += OnMainKey;
             _main = main;
