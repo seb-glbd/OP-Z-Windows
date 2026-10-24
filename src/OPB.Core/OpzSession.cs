@@ -41,6 +41,7 @@ public sealed class OpzSession : IDisposable
     readonly object _connectionLock = new();
     IMidiConnection? _midi;
     long _lastAckTicks;
+    ushort _sessionId = 0xCE2E;
     long _clockTicks;
     readonly List<byte> _patternPackets = new();
     TaskCompletionSource<int>? _pendingAck;
@@ -129,6 +130,7 @@ public sealed class OpzSession : IDisposable
                     midi.SysexReceived += OnSysex;
                     midi.ShortReceived += OnShort;
                     _lastAckTicks = Environment.TickCount64;
+                    _sessionId = (ushort)Random.Shared.Next(1, 0x8000);
                     Post(() =>
                     {
                         PortName = midi.Name;
@@ -139,7 +141,7 @@ public sealed class OpzSession : IDisposable
 
                 if (_stateSyncPaused) { _lastAckTicks = Environment.TickCount64; return; }
 
-                _midi.SendSysex(OpzFrame.Heartbeat);
+                _midi.SendSysex(OpzFrame.Hello(_sessionId));
 
                 if (Environment.TickCount64 - _lastAckTicks > 4000)
                 {

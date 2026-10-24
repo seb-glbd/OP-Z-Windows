@@ -11,6 +11,12 @@ public readonly record struct OpzFrame(byte MessageId, byte[] Payload)
     /// <summary>The heartbeat used by the official app: app session id 01 4E 2E (packed), protocol 6.</summary>
     public static readonly byte[] Heartbeat = [0xF0, 0x00, 0x20, 0x76, 0x01, 0x00, 0x01, 0x4E, 0x2E, 0x06, 0xF7];
 
+    /// <summary>
+    /// StateSync hello: the app's session id (big-endian) and protocol version 6. A new id makes
+    /// the OP-Z treat the client as a new session and resend its full state burst.
+    /// </summary>
+    public static byte[] Hello(ushort sessionId) => Build(0x00, [(byte)(sessionId >> 8), (byte)sessionId, 0x06]);
+
     public static byte[] Build(byte messageId, ReadOnlySpan<byte> payload)
     {
         var packed = Pack7.Encode(payload);
