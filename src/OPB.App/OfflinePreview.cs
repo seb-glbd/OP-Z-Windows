@@ -59,6 +59,15 @@ public static class OfflinePreview
         }
     }
 
+    /// <summary>Offline demo files for screens that need the file service: <c>--offline dir --demo-files</c> reads them from dir.</summary>
+    public static byte[]? DemoFile(string name)
+    {
+        var args = Environment.GetCommandLineArgs();
+        if (!IsRequested(args) || !args.Contains("--demo-files")) return null;
+        var path = Path.Combine(Arg(args, "--offline") ?? "tests/fixtures", name);
+        return File.Exists(path) ? File.ReadAllBytes(path) : null;
+    }
+
     static string? Arg(string[] args, string name)
     {
         int i = Array.IndexOf(args, name);
