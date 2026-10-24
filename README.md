@@ -19,7 +19,7 @@ It finds the OP-Z MIDI port by itself and reconnects if you unplug it.
 
 | Page | What it does |
 | --- | --- |
-| Screen | Follows the OP-Z like the official app: the track screen for the active track (sound, envelope, LFO/arp, sends, pan, level, note length/style, quantize, portamento, 16-step sequencer with playhead, locks and components); **Mixer**, **Tempo**, **Project** while those buttons are held; **Tape** and **Perform** for those tracks; the step-component wiring view while shift + a step is held. |
+| Screen | Follows the OP-Z like the official app: the track screen for the active track (sound, envelope, LFO/arp, sends, pan, level, note length/style, quantize, portamento, 16-step sequencer with playhead, locks and components); **Mixer**, **Tempo**, **Project** while those buttons are held; **Tape**, **Perform** (live punch-ins), **Master** (filter curve, transposition, routing), **Module** (expansion module and input), **Lights** (fixture preview, patterns and animations) and **Motion** (color preview, slot keys) for those tracks; the step-component wiring view while shift + a step is held. |
 | Touch editing | Tap any parameter (red frame) and drag on the touch pad, or use the mouse wheel. Mixer faders work with several fingers. Tap a step dot to add/remove a trig. |
 | Configurator | Assign plugs to the 10 slots per track, commit/revert. Needs OP-Z firmware 1.2.45+. |
 | Photomatic | 10 rolls × 24 image/video slots, played from track 16, with the colour dials and white-key effects. Media lives in `Documents\OP-B\photomatic`. |

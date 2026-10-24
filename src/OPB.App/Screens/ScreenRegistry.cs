@@ -20,6 +20,10 @@ public static class ScreenKeys
     public const string Project = "project";
     public const string Tape = "tape";
     public const string Perform = "perform";
+    public const string MasterTrack = "master";
+    public const string ModuleTrack = "module";
+    public const string LightsTrack = "lights";
+    public const string MotionTrack = "motiontrack";
     public const string StepComponents = "steps";
     public const string Configurator = "configurator";
     public const string Photomatic = "photomatic";
@@ -61,6 +65,10 @@ public static class ScreenRegistry
             _ when s.Ui.HeldKey >= 0 && s.Ui.Shift && Tracks.HasSound(s.ActiveTrack) && Has(ScreenKeys.StepComponents) => ScreenKeys.StepComponents,
             _ when (TrackId)s.ActiveTrack == TrackId.Tape && Has(ScreenKeys.Tape) => ScreenKeys.Tape,
             _ when (TrackId)s.ActiveTrack == TrackId.Perform && Has(ScreenKeys.Perform) => ScreenKeys.Perform,
+            _ when (TrackId)s.ActiveTrack == TrackId.Master => ScreenKeys.MasterTrack,
+            _ when (TrackId)s.ActiveTrack == TrackId.Module => ScreenKeys.ModuleTrack,
+            _ when (TrackId)s.ActiveTrack == TrackId.Lights => ScreenKeys.LightsTrack,
+            _ when (TrackId)s.ActiveTrack == TrackId.Motion => ScreenKeys.MotionTrack,
             _ => ScreenKeys.Track,
         };
     }

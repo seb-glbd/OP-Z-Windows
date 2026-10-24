@@ -143,6 +143,15 @@ public sealed class PatternBank
     public ushort TapeRouting(int pattern) => BinaryPrimitives.ReadUInt16LittleEndian(Data.AsSpan(Base(pattern) + TapeRoutingOffset));
     public ushort MasterRouting(int pattern) => BinaryPrimitives.ReadUInt16LittleEndian(Data.AsSpan(Base(pattern) + MasterRoutingOffset));
 
+    /// <summary>Includes or excludes a track from the master (transposition) or tape routing mask.</summary>
+    public void SetRouted(int pattern, bool master, int track, bool on)
+    {
+        var span = Data.AsSpan(Base(pattern) + (master ? MasterRoutingOffset : TapeRoutingOffset));
+        ushort mask = BinaryPrimitives.ReadUInt16LittleEndian(span);
+        mask = on ? (ushort)(mask | (1 << track)) : (ushort)(mask & ~(1 << track));
+        BinaryPrimitives.WriteUInt16LittleEndian(span, mask);
+    }
+
     public bool IsEmpty(int pattern)
     {
         for (int track = 0; track < Tracks.Count; track++)
