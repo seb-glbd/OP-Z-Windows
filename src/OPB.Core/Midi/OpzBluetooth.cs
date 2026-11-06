@@ -37,12 +37,12 @@ public sealed class OpzBluetooth : IDisposable
     /// </summary>
     public const string StalePairing = "Windows' pairing with this OP-Z is out of date. Remove the OP-Z in Windows Settings > Bluetooth & devices, then tap it again";
 
-    readonly BluetoothLEAdvertisementWatcher _watcher = new() { ScanningMode = BluetoothLEScanningMode.Active };
+    readonly BluetoothLEAdvertisementWatcher? _watcher;
     readonly Dictionary<ulong, BleDevice> _seen = new();
     readonly Dictionary<ulong, string> _paired = new();
     readonly HashSet<ulong> _midi = new();
     readonly object _lock = new();
-    readonly Timer _housekeeping;
+    readonly Timer? _housekeeping;
     Radio? _radio;
     bool _scanRequested, _watching, _disposed;
     DateTime _pairedAt = DateTime.MinValue;
@@ -53,8 +53,20 @@ public sealed class OpzBluetooth : IDisposable
 
     public OpzBluetooth()
     {
-        _watcher.Received += OnReceived;
-        _watcher.Stopped += OnStopped;
+        try
+        {
+            var watcher = new BluetoothLEAdvertisementWatcher { ScanningMode = BluetoothLEScanningMode.Active };
+            watcher.Received += OnReceived;
+            watcher.Stopped += OnStopped;
+            _watcher = watcher;
+        }
+        catch (Exception ex) when (ex is NotImplementedException
+            or PlatformNotSupportedException or System.Runtime.InteropServices.COMException)
+        {
+            State = BluetoothState.Unsupported;
+            LastError = ex.Message;
+            return;
+        }
         _housekeeping = new Timer(_ => Housekeeping(), null, 0, 2000);
         _ = CheckAdapterAsync();
     }
@@ -117,6 +129,7 @@ public sealed class OpzBluetooth : IDisposable
     /// <summary>Scans actively for devices to show (the Devices screen); the link scans by itself.</summary>
     public void SetScanning(bool on)
     {
+        if (_watcher is null) return;
         lock (_lock) _scanRequested = on;
         UpdateWatcher();
         if (on) _ = RefreshPairedAsync();
@@ -161,6 +174,7 @@ public sealed class OpzBluetooth : IDisposable
     /// </summary>
     public IMidiConnection? TakeConnection()
     {
+        if (_watcher is null) return null;
         lock (_lock)
         {
             _wantedAt = DateTime.UtcNow;
@@ -271,6 +285,7 @@ public sealed class OpzBluetooth : IDisposable
 
     void UpdateWatcher()
     {
+        if (_watcher is null) return;
         bool run;
         lock (_lock)
         {
@@ -346,8 +361,8 @@ public sealed class OpzBluetooth : IDisposable
             ready = _ready;
             _ready = null;
         }
-        _housekeeping.Dispose();
-        try { _watcher.Stop(); } catch { /* radio gone */ }
+        _housekeeping?.Dispose();
+        try { _watcher?.Stop(); } catch { /* radio gone */ }
         ready?.Dispose();
     }
 }
