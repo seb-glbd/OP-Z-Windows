@@ -60,9 +60,10 @@ public sealed class OpzBluetooth : IDisposable
             watcher.Stopped += OnStopped;
             _watcher = watcher;
         }
-        catch (Exception ex) when (ex is NotImplementedException
-            or PlatformNotSupportedException or System.Runtime.InteropServices.COMException)
+        catch (Exception ex)
         {
+            // Without WinRT Bluetooth (Wine/Proton throws NotImplementedException, others may throw
+            // anything) the app still runs over USB: Bluetooth just shows as not available.
             State = BluetoothState.Unsupported;
             LastError = ex.Message;
             return;
